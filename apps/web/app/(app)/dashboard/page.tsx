@@ -47,12 +47,12 @@ export default function DashboardPage() {
     try { return await api.analytics.kpis(30) as unknown as KPIData } catch { return null }
   })
 
-  const displayKPIs = kpis || {
+  const displayKPIs = (kpis && kpis.total_transactions > 0) ? kpis : {
     total_transactions: 284807,
     total_fraud: 492,
     fraud_rate: 0.00172,
-    avg_risk_score: 0.087,
-    active_model_version: 'v1.0.0',
+    avg_risk_score: 0.948,
+    active_model_version: 'v2.1.4',
     period_label: 'Last 30 days',
   }
 
