@@ -1,0 +1,40 @@
+# Production Docker Compose — extends dev compose
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  # Production Nginx reverse proxy
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: fraudshield-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - nginx_certs:/etc/nginx/certs:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - fraudshield-api
+      - fraudshield-web
+    networks:
+      - fraudshield-network
+
+  fraudshield-api:
+    environment:
+      ENVIRONMENT: production
+      LOG_LEVEL: WARNING
+    # In production, do NOT expose 8000 directly — use nginx
+    ports: []
+
+  fraudshield-web:
+    # In production, do NOT expose 3000 directly — use nginx
+    ports: []
+
+  fraudshield-db:
+    # In production, do NOT expose 5432 — DB is internal only
+    ports: []
+
+volumes:
+  nginx_certs:
+  nginx_logs:
