@@ -218,8 +218,9 @@ export default function PredictPage() {
       if (viewMode === 'beginner') {
         const country = ALL_COUNTRIES.find(c => c.code === countryCode)
         const category = MERCHANT_CATEGORIES.find(m => m.code === merchantCategory)
+        const baseline = getConvertedBaseline(category?.baselineAmount || 100, currency, countryCode)
         const isHighRisk =
-          amount > 1000 ||
+          amount >= baseline * 1.8 ||
           countryCode !== billingCountry ||
           merchantCategory === 'atm' ||
           merchantCategory === 'crypto_exchange' ||
@@ -228,7 +229,6 @@ export default function PredictPage() {
           country?.riskLevel === 'high' ||
           channel === 'ATM' ||
           cardType === 'Prepaid' ||
-          accountAgeDays < 30 ||
           (timeOfDay >= 1 && timeOfDay <= 5)
 
         payload = {
@@ -248,8 +248,10 @@ export default function PredictPage() {
       const res = await api.predictions.single(payload) as PredictResult
       setResult(res)
     } catch {
+      const category = MERCHANT_CATEGORIES.find(m => m.code === merchantCategory)
+      const baseline = getConvertedBaseline(category?.baselineAmount || 100, currency, countryCode)
       const isHigh = viewMode === 'beginner'
-        ? (amount > 1000 || countryCode !== billingCountry || cardType === 'Prepaid' || merchantCategory === 'crypto_exchange' || merchantCategory === 'gambling' || countryCode === 'NG' || countryCode === 'RU' || accountAgeDays < 30)
+        ? (amount >= baseline * 1.8 || countryCode !== billingCountry || cardType === 'Prepaid' || merchantCategory === 'crypto_exchange' || merchantCategory === 'gambling' || countryCode === 'NG' || countryCode === 'RU')
         : (advForm.amount > 1000)
       setResult({
         risk_score: isHigh ? 0.914 : 0.038,
@@ -387,9 +389,20 @@ export default function PredictPage() {
     }
 
     if (reasons.length === 0) {
+      if (amount > baseline * 1.1) {
+        reasons.push({
+          title: `Elevated Order Spend (${currency} ${amount.toLocaleString()})`,
+          desc: `Transaction amount of ${currency} ${amount.toLocaleString()} is higher than the typical average baseline of ${currency} ${baseline.toLocaleString()} for ${category.label} in ${txnCountry.name}.`
+        })
+      } else {
+        reasons.push({
+          title: `Merchant Category Chargeback Weighting (${category.label})`,
+          desc: `${category.label} processing endpoints exhibit elevated chargeback risk metrics.`
+        })
+      }
       reasons.push({
-        title: `Model Ensemble Anomaly Signature`,
-        desc: `Isolation Forest anomaly score exceeded 0.72 threshold based on multivariate feature co-occurrence.`
+        title: `Instrument & Channel Audit (${cardNetwork} ${cardType})`,
+        desc: `Authorization request on ${cardNetwork} ${cardType} card via ${channel} channel requires step-up identity check.`
       })
     }
 
