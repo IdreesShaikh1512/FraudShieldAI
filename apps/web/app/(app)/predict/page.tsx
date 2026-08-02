@@ -334,12 +334,7 @@ export default function PredictPage() {
       }
 
       // 5. CHANNEL & AUTHENTICATION RISKS
-      if (channel === 'Online / Web' || channel === 'CNP (Card Not Present)' || channel === 'MOTO') {
-        reasons.push({
-          title: `Unattended Card-Not-Present Channel`,
-          desc: `Transaction executed via ${channel} without physical EMV chip insertion or 3DS biometric step-up authentication.`
-        })
-      } else if (channel === 'ATM') {
+      if (channel === 'ATM') {
         reasons.push({
           title: `Physical ATM Cash Extraction`,
           desc: `ATM cash withdrawal attempted — high risk of cloned magstripe card or forced PIN extraction.`
